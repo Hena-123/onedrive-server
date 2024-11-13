@@ -1,24 +1,51 @@
-// server.js
 const express = require('express');
-const axios = require('axios');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
 const app = express();
-const port = 5001;
+const port = process.env.PORT || 3000;
 
-// Replace with your OneDrive link
-// const onedriveFileUrl = 'https://1drv.ms/x/c/5c6e877f08c5aa3b/EY7xomSePCFGhVytRuxQeAIBdA5x5Pqq2qTVcyQHvV5YlA';
-const onedriveFileUrl = 'https://onedrive.live.com/edit?id=5C6E877F08C5AA3B!s64a2f18e3c9e4621855cad46ec507802&resid=5C6E877F08C5AA3B!s64a2f18e3c9e4621855cad46ec507802&cid=5c6e877f08c5aa3b&ithint=file%2Cxlsx&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3gvYy81YzZlODc3ZjA4YzVhYTNiL0VZN3hvbVNlUENGR2hWeXRSdXhRZUFJQmRBNXg1UHFxMnFUVmN5UUh2VjVZbEE&migratedtospo=true&wdo=2?download=1';
+// MongoDB connection setup
+mongoose.connect('mongodb://localhost:27017/mydb', { useNewUrlParser: true, useUnifiedTopology: true });
 
-app.get('/fetch-excel', async (req, res) => {
-  try {
-    const response = await axios.get(onedriveFileUrl, { responseType: 'arraybuffer' });
-    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.send(response.data);
-  } catch (error) {
-    console.error('Error fetching Excel file:', error);
-    res.status(500).send('Error fetching file');
-  }
+const DataSchema = new mongoose.Schema({
+    Id: Number,
+    Bank: String,
+    FDNo: Number,
+    AccountNo: Number,
+    AccountHolder: String,
+    OpeningDate: String,
+    OpeningMonth: String,
+    OpeningYear: String,
+    MaturityDate: String,
+    MaturityMonth: String,
+    MaturityYear: String,
+    OpeningAmount: Number,
+    InterestRate: Number,
+    Interest: Number,
+    MaturityAmount: Number,
+    Remarks: String,
+});
+
+const Data = mongoose.model('Data', DataSchema);
+
+// Middleware to parse JSON bodies
+app.use(bodyParser.json());
+
+// Endpoint to store data
+app.post('/storeData', (req, res) => {
+    const data = req.body;
+
+    // Save the data to MongoDB
+    const newData = new Data(data);
+    newData.save((err) => {
+        if (err) {
+            return res.status(500).send('Error saving data');
+        }
+        res.status(200).send('Data stored successfully');
+    });
 });
 
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });
